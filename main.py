@@ -5,7 +5,7 @@ def start():
     global sender
     global outputUniverse
     inputUniverse = 1
-    outputUniverse = 5
+    outputUniverse = 2
 
     receiver = sacn.sACNreceiver(bind_address='192.168.178.131')
     receiver.start()
@@ -24,28 +24,32 @@ def start():
 def inputData(packet):
     outputData = list(packet.dmxData)
 
-    count = 1
-    # ------ Multitreading loop
+    count = 4
+    fixtureAddress = [1, 75, 149, 223]
+    dimmerData = [0] * count
+    shutterData = [0] * count
+    shutterOpen = [True] * count
+    dimmer = [0.0] * count
 
-    fixtureAddress = 1
+    for x in range(count):
+        dimmerData[x] = outputData[fixtureAddress[x] - 1]  # Channel 1
+        shutterData[x] = outputData[fixtureAddress[x] + 0]  # Channel 2
+        dimmer[x] = dimmerData[x] / 255
+        if shutterData[x] <= 10:
+            shutterOpen[x] = False
+        else:
+            shutterOpen[x] = True
 
-    dimmerData = outputData[fixtureAddress - 1]  # Channel 1
-    shutterData = outputData[fixtureAddress + 0]  # Channel 2
-    dimmer = dimmerData / 255
-    if shutterData <= 10:
-        shutterOpen = False
-    else:
-        shutterOpen = True
+        if not shutterOpen[x]:
+            dimmer[x] = 0
 
-    if not shutterOpen:
-        dimmer = 0
+        # -- strobe --
 
-    # -- strobe --
-
-    numberChannels = 4 * 4 * 4
-    offset = 9
-    for x in range(numberChannels):
-        outputData[x + offset] = int(outputData[x + offset] * dimmer)
+        numberChannels = 4 * 4 * 4
+        offset = 9
+        for y in range(numberChannels):
+            c = (y + offset + fixtureAddress[x] - 1)
+            outputData[c] = int(outputData[c] * dimmer[x])
 
     sender[outputUniverse].dmx_data = tuple(outputData)
     sender.flush()
