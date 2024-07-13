@@ -17,11 +17,10 @@ def start():
 def inputData(packet):
     outputData = list(packet.dmxData)
 
-    count = 4
-    fixtureAddress = [1, 75, 149, 223]
     dimmerData = [0] * count
     shutterData = [0] * count
     shutterOpen = [True] * count
+    strobeOn = False
     dimmer = [0.0] * count
 
     for x in range(count):
@@ -36,7 +35,12 @@ def inputData(packet):
         if not shutterOpen[x]:
             dimmer[x] = 0
 
-        # -- strobe --
+        if 21 <= shutterData[0] <= 121 and not strobeOn:
+            print("strobe on...")
+            value = shutterData[0] - 21
+            hz = value * 0.4
+            conn2.send(hz)
+            strobeOn = True
 
         numberChannels = 4 * 4 * 4
         offset = 9
@@ -44,43 +48,77 @@ def inputData(packet):
             c = (y + offset + fixtureAddress[x] - 1)
             outputData[c] = int(outputData[c] * dimmer[x])
 
-    global sl
+        global sl
+        for i in range(len(sl)):  # irgendwie schöner aber geht so auch
+            sl[i] = outputData[i]
 
-    for i in range(len(sl)):  # irgendwie schöner aber geht so auch
-        sl[i] = outputData[i]
+        global dimmerList
+        for i in range(len(dimmerList)):  # irgendwie schöner aber geht so auch
+            dimmerList[i] = dimmerData[i]
 
 
 def manager(sharedList, universe):
     sender = sacn.sACNsender(source_name='sAcn Backup',
-                             fps=60,  # passt net ganz zu den daten von sacn view => 43,48hz
+                             fps=60,  # 60  passt net ganz zu den daten von sacn view => 43,48hz
                              bind_address='192.168.178.131')
     sender.start()
     sender.activate_output(universe)
+    # sender.manual_flush = True
     sender[universe].multicast = True
     sender[universe].priority = 50
+    dmx = [0] * 512
     while True:
         # send DMX Data on Change
-        # print(sharedList)
-        sender[universe].dmx_data = sharedList
+        print(sharedList)  # okay frag einfach nicht -------------- sender[universe].dmx_data = sharedList
+        if len(sharedList) > 512 or \
+                not all((isinstance(x, int) and (0 <= x <= 255)) for x in sharedList):
+            print("-----")
+        for x in range(len(sharedList)):
+            dmx[x] = int(sharedList[x])
+        sender[universe].dmx_data = dmx
+        # sender.flush()
 
 
-def strobe(sharedList):
+def strobe(sharedList, conn, c, addr, dl):
+    hz = 1
+    numberChannels = 4 * 4 * 4
+    offset = 9
     while True:
         # edit Data to strobe
-        print("strobe")
-        time.sleep(1)
+        if conn.poll():  # if no strobe on -> don't go through the hole loop
+            hz = conn.recv()
+            if hz < 1:  # nicht durch null teilen
+                hz = 1
+
+        if sharedList[addr[0] - 1] != 0:  # if dimmer is off no strobing is necessary
+            for x in range(c):  # all Off
+                for y in range(numberChannels):
+                    var = (y + offset + addr[x] - 1)
+                    sharedList[var] = int(sharedList[var] * 0)
+            time.sleep((1 / hz) / 2)
+            for x in range(c):  # all ON
+                for y in range(numberChannels):
+                    var = (y + offset + addr[x] - 1)
+                    sharedList[var] = int(sharedList[var] * dl[x]) # <------------- hier stehen geblieben
+            time.sleep((1 / hz) / 2)
 
 
 if __name__ == '__main__':
     inputUniverse = 1
     outputUniverse = 2
+    fixtureAddress = [1, 75, 149, 223]
+    count = 4
 
     smm = SharedMemoryManager()
     smm.start()
     emptyDmxData = [0] * 512
+    emptyDimmerList = [0.0] * count
     sl = smm.ShareableList(emptyDmxData)
+    dimmerList = smm.ShareableList(emptyDimmerList)
 
-    Manager = Process(target=manager, args=(sl, outputUniverse))
-    InputStrobe = Process(target=strobe, args=(sl,))
+    conn1, conn2 = multiprocessing.Pipe(duplex=True)
+    Manager = Process(target=manager, args=(sl, outputUniverse), name="inputManager")
+    InputStrobe = Process(target=strobe, args=(sl, conn1, count, fixtureAddress, dimmerList), name="strobe")
     Manager.start()
+    InputStrobe.start()
     start()
