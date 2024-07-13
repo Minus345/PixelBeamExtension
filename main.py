@@ -1,24 +1,17 @@
+import time
+from multiprocessing import Process
+
 import sacn
+import multiprocessing
+from multiprocessing.managers import SharedMemoryManager
 
 
 def start():
-    global sender
-    global outputUniverse
-    inputUniverse = 1
-    outputUniverse = 2
-
     receiver = sacn.sACNreceiver(bind_address='192.168.178.131')
     receiver.start()
     receiver.join_multicast(inputUniverse)
     receiver.register_listener('universe', inputData, universe=inputUniverse)
-
-    sender = sacn.sACNsender(source_name='sAcn Backup',
-                             fps=40,
-                             bind_address='192.168.178.131')
-    sender.start()
-    sender.activate_output(outputUniverse)
-    sender[outputUniverse].multicast = True
-    sender[outputUniverse].priority = 50
+    print("---starting---")
 
 
 def inputData(packet):
@@ -51,9 +44,43 @@ def inputData(packet):
             c = (y + offset + fixtureAddress[x] - 1)
             outputData[c] = int(outputData[c] * dimmer[x])
 
-    sender[outputUniverse].dmx_data = tuple(outputData)
-    sender.flush()
+    global sl
+
+    for i in range(len(sl)):  # irgendwie schöner aber geht so auch
+        sl[i] = outputData[i]
+
+
+def manager(sharedList, universe):
+    sender = sacn.sACNsender(source_name='sAcn Backup',
+                             fps=60,  # passt net ganz zu den daten von sacn view => 43,48hz
+                             bind_address='192.168.178.131')
+    sender.start()
+    sender.activate_output(universe)
+    sender[universe].multicast = True
+    sender[universe].priority = 50
+    while True:
+        # send DMX Data on Change
+        # print(sharedList)
+        sender[universe].dmx_data = sharedList
+
+
+def strobe(sharedList):
+    while True:
+        # edit Data to strobe
+        print("strobe")
+        time.sleep(1)
 
 
 if __name__ == '__main__':
+    inputUniverse = 1
+    outputUniverse = 2
+
+    smm = SharedMemoryManager()
+    smm.start()
+    emptyDmxData = [0] * 512
+    sl = smm.ShareableList(emptyDmxData)
+
+    Manager = Process(target=manager, args=(sl, outputUniverse))
+    InputStrobe = Process(target=strobe, args=(sl,))
+    Manager.start()
     start()

@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="init">
+    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="add more fixtures">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -75,6 +75,15 @@
       <option name="presentableId" value="Default" />
       <updated>1720638997701</updated>
     </task>
+    <task id="LOCAL-00001" summary="add more fixtures">
+      <option name="closed" value="true" />
+      <created>1720811753011</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1720811753011</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -88,6 +97,10 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add more fixtures" />
+    <option name="LAST_COMMIT_MESSAGE" value="add more fixtures" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <default-breakpoints>
@@ -100,7 +113,7 @@
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="on" />
+        <watch expression="sender" language="Python" />
       </configuration>
     </watches-manager>
   </component>
