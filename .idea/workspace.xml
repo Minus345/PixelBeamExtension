@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="add strobe (not working)">
+    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="work in progress (not working)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -104,7 +104,15 @@
       <option name="project" value="LOCAL" />
       <updated>1720909807651</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="work in progress (not working)">
+      <option name="closed" value="true" />
+      <created>1720969899810</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1720969899810</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -122,7 +130,8 @@
     <MESSAGE value="add shared memory" />
     <MESSAGE value="add shared memory" />
     <MESSAGE value="add strobe (not working)" />
-    <option name="LAST_COMMIT_MESSAGE" value="add strobe (not working)" />
+    <MESSAGE value="work in progress (not working)" />
+    <option name="LAST_COMMIT_MESSAGE" value="work in progress (not working)" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

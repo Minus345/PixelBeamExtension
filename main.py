@@ -50,16 +50,24 @@ def inputData(packet):
             c = (y + offset + fixtureAddress[x] - 1)
             outputData[c] = int(outputData[c] * dimmer[x])
 
-        global PosData
-        for i in range(len(PosData)):  # irgendwie schöner aber geht so auch
-            PosData[i] = outputData[i]
-
+        global ColourData
+        global PosDataNew
         global rgbwBeforeStrobe
-        for i in range(len(rgbwBeforeStrobe)):  # irgendwie schöner aber geht so auch
-            rgbwBeforeStrobe[i] = outputData[i]
+        startAddr = offset + fixtureAddress[0] - 1
+        endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
+        for i in range(len(ColourData)):  # irgendwie schöner aber geht so auch
+            if startAddr < i < endFromColorData:  # edit pos Data
+                ColourData[i] = int(outputData[i])
+            else:
+                PosDataNew[i] = int(outputData[i])
+                rgbwBeforeStrobe[i] = int(outputData[i])
+
+        # print(outputData)
+        # print(ColourData)
+        # print(PosDataNew)
 
 
-def manager(sharedList, colourData, universe, fixtureAddress):
+def manager(colourData, PosData, universe, fixtureAddress):
     sender = sacn.sACNsender(source_name='sAcn Backup',
                              fps=50,  # 60  passt net ganz zu den daten von sacn view => 43,48hz
                              bind_address='192.168.178.131')
@@ -73,20 +81,21 @@ def manager(sharedList, colourData, universe, fixtureAddress):
     while True:
         # send DMX Data on Change
         # print(sharedList) -------------- sender[universe].dmx_data = sharedList
-        for x in range(len(sharedList)):
+
+        for x in range(len(PosData)):
             startAddr = offset + fixtureAddress[0] - 1
             endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
-            #print(startAddr)
-            #print(endFromColorData)
+            # print(startAddr)
+            # print(endFromColorData)
             if startAddr < x < endFromColorData:  # edit pos Data
                 dmx[x] = int(colourData[x])
             else:
-                dmx[x] = int(sharedList[x])
+                dmx[x] = int(PosData[x])
         sender[universe].dmx_data = dmx
         # sender.flush()
 
 
-def strobe(outputData, colourData, conn, c, addr, beforeStrobe):
+def strobe(colourData, outputData, conn, c, addr, beforeStrobe):
     hz = 1
     numberChannels = 4 * 4 * 4
     offset = 9
@@ -105,12 +114,12 @@ def strobe(outputData, colourData, conn, c, addr, beforeStrobe):
             for x in range(c):  # all Off
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    outputData[var] = int(outputData[var] * 0)
+                    colourData[var] = int(colourData[var] * 0)
             time.sleep((1 / hz) / 2)
             for x in range(c):  # all ON
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    outputData[var] = int(beforeStrobe[var])  # <------------- hier stehen geblieben
+                    colourData[var] = int(beforeStrobe[var])  # <------------- hier stehen geblieben
             time.sleep((1 / hz) / 2)
 
 
@@ -124,13 +133,14 @@ if __name__ == '__main__':
     smm.start()
     emptyDmxData = [0] * 512
     emptyDimmerList = [0] * 512
-    PosData = smm.ShareableList(emptyDmxData)
-    RGBWData = smm.ShareableList(emptyDmxData)
+    ColourData = smm.ShareableList(emptyDmxData)
+    PosDataNew = smm.ShareableList(emptyDmxData)
     rgbwBeforeStrobe = smm.ShareableList(emptyDimmerList)
 
     conn1, conn2 = multiprocessing.Pipe(duplex=True)
-    Manager = Process(target=manager, args=(PosData, RGBWData, outputUniverse, fixtureAddress), name="inputManager")
-    InputStrobe = Process(target=strobe, args=(PosData, RGBWData, conn1, count, fixtureAddress, rgbwBeforeStrobe),
+    Manager = Process(target=manager, args=(ColourData, PosDataNew, outputUniverse, fixtureAddress),
+                      name="inputManager")
+    InputStrobe = Process(target=strobe, args=(ColourData, PosDataNew, conn1, count, fixtureAddress, rgbwBeforeStrobe),
                           name="strobe")
     Manager.start()
     InputStrobe.start()
