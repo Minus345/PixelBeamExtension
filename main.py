@@ -53,21 +53,23 @@ def inputData(packet):
         global ColourData
         global PosDataNew
         global rgbwBeforeStrobe
+        global ColourAddressData
+
         startAddr = offset + fixtureAddress[0] - 1
         endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
         for i in range(len(ColourData)):  # irgendwie schöner aber geht so auch
-            if startAddr < i < endFromColorData:  # edit pos Data
+            if x == ColourAddressData:
                 ColourData[i] = int(outputData[i])
             else:
                 PosDataNew[i] = int(outputData[i])
                 rgbwBeforeStrobe[i] = int(outputData[i])
 
-        # print(outputData)
-        # print(ColourData)
-        # print(PosDataNew)
+        #print(outputData)
+        #print(ColourData)
+        #print(PosDataNew)
 
 
-def manager(colourData, PosData, universe, fixtureAddress):
+def manager(colourData, PosData, universe, fixtureAddress, ColourAddressData):
     sender = sacn.sACNsender(source_name='sAcn Backup',
                              fps=50,  # 60  passt net ganz zu den daten von sacn view => 43,48hz
                              bind_address='192.168.178.131')
@@ -80,22 +82,26 @@ def manager(colourData, PosData, universe, fixtureAddress):
     offset = 9
     while True:
         # send DMX Data on Change
-        # print(sharedList) -------------- sender[universe].dmx_data = sharedList
+        # print(sharedList) #-------------- sender[universe].dmx_data = sharedList
 
         for x in range(len(PosData)):
             startAddr = offset + fixtureAddress[0] - 1
             endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
             # print(startAddr)
             # print(endFromColorData)
-            if startAddr < x < endFromColorData:  # edit pos Data
+            if x == ColourAddressData:
                 dmx[x] = int(colourData[x])
             else:
                 dmx[x] = int(PosData[x])
+            print("dmx")
+            print(colourData)
+            print(dmx)
         sender[universe].dmx_data = dmx
+
         # sender.flush()
 
 
-def strobe(colourData, outputData, conn, c, addr, beforeStrobe):
+def strobe(colourData, outputData, conn, c, addr, beforeStrobe, ColourAddressData):
     hz = 1
     numberChannels = 4 * 4 * 4
     offset = 9
@@ -104,13 +110,13 @@ def strobe(colourData, outputData, conn, c, addr, beforeStrobe):
         # edit Data to strobe
         if conn.poll():  # if no strobe on -> don't go through the hole loop
             hz = conn.recv()
-            # rint(hz)
+            print(hz)
             on = True
             if hz < 1:  # nicht durch null teilen
                 hz = 1
                 on = False
 
-        if on:  # if dimmer is off no strobing is necessary
+        if on:
             for x in range(c):  # all Off
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
@@ -129,6 +135,8 @@ if __name__ == '__main__':
     fixtureAddress = [1, 75, 149, 223]
     count = 1
 
+    ColourAddressData = [0, 1, 2, 3, 4, 5, 6, 8]  # gleich -1 gerechnet python dmx array starting at 0
+
     smm = SharedMemoryManager()
     smm.start()
     emptyDmxData = [0] * 512
@@ -138,9 +146,10 @@ if __name__ == '__main__':
     rgbwBeforeStrobe = smm.ShareableList(emptyDimmerList)
 
     conn1, conn2 = multiprocessing.Pipe(duplex=True)
-    Manager = Process(target=manager, args=(ColourData, PosDataNew, outputUniverse, fixtureAddress),
+    Manager = Process(target=manager, args=(ColourData, PosDataNew, outputUniverse, fixtureAddress, ColourAddressData),
                       name="inputManager")
-    InputStrobe = Process(target=strobe, args=(ColourData, PosDataNew, conn1, count, fixtureAddress, rgbwBeforeStrobe),
+    InputStrobe = Process(target=strobe, args=(
+        ColourData, PosDataNew, conn1, count, fixtureAddress, rgbwBeforeStrobe, ColourAddressData),
                           name="strobe")
     Manager.start()
     InputStrobe.start()
