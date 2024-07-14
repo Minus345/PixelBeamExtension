@@ -37,12 +37,12 @@ def inputData(packet):
         if 21 <= shutterData[0] <= 121 and not strobeOn:
             value = shutterData[0] - 21
             hz = value * 0.35
-            conn2.send(hz)
+            # conn2.send(hz)
             strobeOn = True
 
         if not (21 <= shutterData[0] <= 121):
             strobeOn = False
-            conn2.send(0)  # sending off ---------- optimal only one time
+            # conn2.send(0)  # sending off ---------- optimal only one time
 
         numberChannels = 4 * 4 * 4
         offset = 9
@@ -55,18 +55,22 @@ def inputData(packet):
         global rgbwBeforeStrobe
         global ColourAddressData
 
-        startAddr = offset + fixtureAddress[0] - 1
-        endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
-        for i in range(len(ColourData)):  # irgendwie schöner aber geht so auch
-            if x == ColourAddressData:
-                ColourData[i] = int(outputData[i])
-            else:
-                PosDataNew[i] = int(outputData[i])
-                rgbwBeforeStrobe[i] = int(outputData[i])
+        for i in range(len(ColourData)):
+            ColourData[i] = outputData[i]
+            #rgbwBeforeStrobe[i] = outputData[i]
 
-        #print(outputData)
-        #print(ColourData)
-        #print(PosDataNew)
+        '''
+        for i in range(len(ColourData)):
+            if i == 0 or i == 1 or i == 2 or i == 3 or i == 4 or i == 5 or i == 6 or i == 8:
+                PosDataNew[i] = int(outputData[i])
+            else:
+                ColourData[i] = int(outputData[i])
+                rgbwBeforeStrobe[i] = int(outputData[i])
+                '''
+
+    # print(outputData)
+    # print(ColourData)
+    # print(PosDataNew)
 
 
 def manager(colourData, PosData, universe, fixtureAddress, ColourAddressData):
@@ -79,24 +83,26 @@ def manager(colourData, PosData, universe, fixtureAddress, ColourAddressData):
     sender[universe].multicast = True
     sender[universe].priority = 50
     dmx = [0] * 512
+
     offset = 9
     while True:
-        # send DMX Data on Change
-        # print(sharedList) #-------------- sender[universe].dmx_data = sharedList
-
-        for x in range(len(PosData)):
-            startAddr = offset + fixtureAddress[0] - 1
-            endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
-            # print(startAddr)
-            # print(endFromColorData)
-            if x == ColourAddressData:
-                dmx[x] = int(colourData[x])
-            else:
-                dmx[x] = int(PosData[x])
-            print("dmx")
-            print(colourData)
-            print(dmx)
+        dmx = colourData
+        #for x in range(len(colourData)):
+        #    dmx[x] = colourData[x]
         sender[universe].dmx_data = dmx
+        #print(dmx)
+
+        '''
+                for x in range(len(PosData)):
+                    startAddr = offset + fixtureAddress[0] - 1
+                    endFromColorData = fixtureAddress[0] - 1 + offset + 4 * 4 * 4 + 1  # + 1 ?
+                    # print(startAddr)
+                    # print(endFromColorData)
+                    if x == 0 or x == 1 or x == 2 or x == 3 or x == 4 or x == 5 or x == 6 or x == 8:
+                        dmx[x] = int(PosData[x])
+                    else:
+                        dmx[x] = int(colourData[x])
+            '''
 
         # sender.flush()
 
@@ -109,8 +115,8 @@ def strobe(colourData, outputData, conn, c, addr, beforeStrobe, ColourAddressDat
     while True:
         # edit Data to strobe
         if conn.poll():  # if no strobe on -> don't go through the hole loop
-            hz = conn.recv()
-            print(hz)
+            # hz = conn.recv()
+            # print(hz)
             on = True
             if hz < 1:  # nicht durch null teilen
                 hz = 1
@@ -139,15 +145,16 @@ if __name__ == '__main__':
 
     smm = SharedMemoryManager()
     smm.start()
-    emptyDmxData = [0] * 512
-    emptyDimmerList = [0] * 512
-    ColourData = smm.ShareableList(emptyDmxData)
-    PosDataNew = smm.ShareableList(emptyDmxData)
-    rgbwBeforeStrobe = smm.ShareableList(emptyDimmerList)
+    ColourData = smm.ShareableList([0] * 512)
+    #PosDataNew = smm.ShareableList([0] * 512)
+    #rgbwBeforeStrobe = smm.ShareableList([0] * 512)
+
+    PosDataNew = None
+    rgbwBeforeStrobe = None
 
     conn1, conn2 = multiprocessing.Pipe(duplex=True)
     Manager = Process(target=manager, args=(ColourData, PosDataNew, outputUniverse, fixtureAddress, ColourAddressData),
-                      name="inputManager")
+                      name="DataOutputSender")
     InputStrobe = Process(target=strobe, args=(
         ColourData, PosDataNew, conn1, count, fixtureAddress, rgbwBeforeStrobe, ColourAddressData),
                           name="strobe")
