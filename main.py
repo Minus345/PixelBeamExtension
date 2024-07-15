@@ -39,17 +39,17 @@ def inputData(packet):
         if 21 <= shutterData[0] <= 121:
             strobeOn = True
 
-        if not (21 <= shutterData[0] <= 121):
-            strobeOn = False
-            # conn2.send(0)  # sending off ---------- optimal only one time
-
         if strobeOn:
             global valueOld
             value = shutterData[0] - 21
-            hz = value * 0.35
+            hz = value * 0.30
             if value != valueOld:
                 valueOld = value
                 conn2.send(hz)
+
+        if not (21 <= shutterData[0] <= 121) and strobeOn:
+            strobeOn = False
+            conn2.send(0)
 
         numberChannels = 4 * 4 * 4
         offset = 9
@@ -60,7 +60,7 @@ def inputData(packet):
         global DmxPosData
         global DMXOld
         for i in range(len(DmxPosData)):
-            if i == 0 or i == 1 or i == 2 or i == 3 or i == 4 or i == 5 or i == 6 or i == 8:
+            if i in ColourAddressData:
                 DmxPosData[i] = int(outputData[i])
             else:
                 DmxColorData[i] = int(outputData[i])
@@ -82,7 +82,7 @@ def manager(universe, fixtureAddress, ColourAddressData):
 
     while True:
         for i in range(len(DmxPosData)):
-            if i == 0 or i == 1 or i == 2 or i == 3 or i == 4 or i == 5 or i == 6 or i == 8:
+            if i in ColourAddressData:
                 dmxOut[i] = int(DmxPosData[i])
             else:
                 if strobeOn:
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     inputUniverse = 1
     outputUniverse = 2
     fixtureAddress = [1, 75, 149, 223]
-    count = 1
+    count = 4
     valueOld = 1
 
     DmxPosData = [0] * 512
@@ -144,7 +144,11 @@ if __name__ == '__main__':
 
     strobeOn = False
 
-    ColourAddressData = [0, 1, 2, 3, 4, 5, 6, 8]  # gleich -1 gerechnet python dmx array starting at 0
+    ColourAddressData = [0, 1, 2, 3, 4, 5, 6, 7, 8, 74, 75, 76, 77, 78, 79, 80,
+                         81, 82, 148, 149, 150, 151, 152, 153, 154, 155, 156, 222, 223, 224, 225, 226, 227, 228, 229,
+                         230]  # gleich -1 gerechnet python dmx array starting at 0
+
+    print(ColourAddressData)
 
     conn1, conn2 = multiprocessing.Pipe(duplex=True)
     Manager = threading.Thread(target=manager,
