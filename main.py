@@ -86,11 +86,7 @@ def manager(colourData, PosData, universe, fixtureAddress, ColourAddressData):
 
     offset = 9
     while True:
-        dmx = colourData
-        #for x in range(len(colourData)):
-        #    dmx[x] = colourData[x]
-        sender[universe].dmx_data = dmx
-        #print(dmx)
+        sender[universe].dmx_data = colourData
 
         '''
                 for x in range(len(PosData)):

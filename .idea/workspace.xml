@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="works ony for first one">
+    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="error &quot;not enough values to unpack&quot;">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -80,47 +80,6 @@
       <option name="presentableId" value="Default" />
       <updated>1720638997701</updated>
     </task>
-    <task id="LOCAL-00001" summary="add more fixtures">
-      <option name="closed" value="true" />
-      <created>1720811753011</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1720811753011</updated>
-    </task>
-    <task id="LOCAL-00002" summary="add more fixtures">
-      <option name="closed" value="true" />
-      <created>1720905573910</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1720905573910</updated>
-    </task>
-    <task id="LOCAL-00003" summary="add strobe (not working)">
-      <option name="closed" value="true" />
-      <created>1720909807651</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1720909807651</updated>
-    </task>
-    <task id="LOCAL-00004" summary="work in progress (not working)">
-      <option name="closed" value="true" />
-      <created>1720969899810</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1720969899810</updated>
-    </task>
-    <task id="LOCAL-00005" summary="works ony for first one">
-      <option name="closed" value="true" />
-      <created>1720970586207</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1720970586207</updated>
-    </task>
-    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -133,14 +92,6 @@
         </entry>
       </map>
     </option>
-  </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="add shared memory" />
-    <MESSAGE value="add shared memory" />
-    <MESSAGE value="add strobe (not working)" />
-    <MESSAGE value="work in progress (not working)" />
-    <MESSAGE value="works ony for first one" />
-    <option name="LAST_COMMIT_MESSAGE" value="works ony for first one" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
