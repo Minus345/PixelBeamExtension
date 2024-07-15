@@ -20,7 +20,7 @@ def inputData(packet):
     dimmerData = [0] * count
     shutterData = [0] * count
     shutterOpen = [True] * count
-    strobeOn = False
+    global strobeOn
     dimmer = [0.0] * count
     hz = 0
 
@@ -57,10 +57,14 @@ def inputData(packet):
             c = (y + offset + fixtureAddress[x] - 1)
             outputData[c] = int(outputData[c] * dimmer[x])
 
-        global DMX
+        global DmxPosData
         global DMXOld
-        DMX = outputData.copy()
-        DMXOld = outputData.copy()
+        for i in range(len(DmxPosData)):
+            if i == 0 or i == 1 or i == 2 or i == 3 or i == 4 or i == 5 or i == 6 or i == 8:
+                DmxPosData[i] = int(outputData[i])
+            else:
+                DmxColorData[i] = int(outputData[i])
+                DMXOld[i] = int(outputData[i])
 
 
 def manager(universe, fixtureAddress, ColourAddressData):
@@ -72,10 +76,27 @@ def manager(universe, fixtureAddress, ColourAddressData):
     sender[universe].multicast = True
     sender[universe].priority = 50
 
-    global DMX
+    global DmxPosData
+    global strobeOn
+    dmxOut = [0] * 512
 
     while True:
-        sender[universe].dmx_data = DMX
+        for i in range(len(DmxPosData)):
+            if i == 0 or i == 1 or i == 2 or i == 3 or i == 4 or i == 5 or i == 6 or i == 8:
+                dmxOut[i] = int(DmxPosData[i])
+            else:
+                if strobeOn:
+                    dmxOut[i] = int(DmxStrobeData[i])
+                else:
+                    dmxOut[i] = int(DmxColorData[i])
+        sender[universe].dmx_data = dmxOut
+        '''
+        print("out")
+        print(dmxOut)
+        print(DmxPosData)
+        print(DmxColorData)
+        print(DmxStrobeData)
+        '''
 
 
 def strobe(conn, c, addr, ColourAddressData):
@@ -83,8 +104,9 @@ def strobe(conn, c, addr, ColourAddressData):
     numberChannels = 4 * 4 * 4
     offset = 9
     on = False
-    global DMX
+    global DmxColorData
     global DMXOld
+    global DmxStrobeData
     while True:
         # edit Data to strobe
         if conn.poll():  # if no strobe on -> don't go through the hole loop
@@ -99,12 +121,12 @@ def strobe(conn, c, addr, ColourAddressData):
             for x in range(c):  # all Off
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    DMX[var] = int(DMX[var] * 0)
+                    DmxStrobeData[var] = int(DmxColorData[var] * 0)
             time.sleep((1 / hz) / 2)
             for x in range(c):  # all ON
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    DMX[var] = DMXOld[var]  # <------------- hier stehen geblieben
+                    DmxStrobeData[var] = DMXOld[var]  # <------------- hier stehen geblieben
             time.sleep((1 / hz) / 2)
 
 
@@ -115,8 +137,12 @@ if __name__ == '__main__':
     count = 1
     valueOld = 1
 
-    DMX = [0] * 512
+    DmxPosData = [0] * 512
+    DmxColorData = [0] * 512
     DMXOld = [0] * 512
+    DmxStrobeData = [0] * 512
+
+    strobeOn = False
 
     ColourAddressData = [0, 1, 2, 3, 4, 5, 6, 8]  # gleich -1 gerechnet python dmx array starting at 0
 

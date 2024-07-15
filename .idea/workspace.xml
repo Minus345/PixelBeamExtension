@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="error &quot;not enough values to unpack&quot;">
+    <list default="true" id="e17299b8-adef-43c0-b4dc-cc91382cdb1a" name="Changes" comment="working">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -88,7 +88,15 @@
       <option name="project" value="LOCAL" />
       <updated>1721039102384</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="working">
+      <option name="closed" value="true" />
+      <created>1721040646008</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1721040646008</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -104,7 +112,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="error &quot;not enough values to unpack&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="error &quot;not enough values to unpack&quot;" />
+    <MESSAGE value="working" />
+    <option name="LAST_COMMIT_MESSAGE" value="working" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
