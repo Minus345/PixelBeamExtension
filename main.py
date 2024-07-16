@@ -1,10 +1,8 @@
 import threading
 import time
-from multiprocessing import Process
-
+import random
 import sacn
 import multiprocessing
-from multiprocessing.managers import SharedMemoryManager
 
 
 def start():
@@ -20,9 +18,8 @@ def inputData(packet):
     dimmerData = [0] * count
     shutterData = [0] * count
     shutterOpen = [True] * count
-    global strobeOn
+    global strobeOn, strobeEnginON, valueOld, valueOld2, rndStrobeOn
     dimmer = [0.0] * count
-    hz = 0
 
     for x in range(count):
         dimmerData[x] = outputData[fixtureAddress[x] - 1]  # Channel 1
@@ -39,17 +36,34 @@ def inputData(packet):
         if 21 <= shutterData[0] <= 121:
             strobeOn = True
 
+        if 122 <= shutterData[0] <= 222:
+            rndStrobeOn = True
+
+        if not (21 <= shutterData[0] <= 121) and strobeOn:
+            strobeEnginON = False
+            valueOld = 0
+            strobeOn = False
+
+        if not (122 <= shutterData[0] <= 222) and rndStrobeOn:
+            strobeEnginON = False
+            valueOld2 = 0
+            rndStrobeOn = False
+
         if strobeOn:
-            global valueOld
             value = shutterData[0] - 21
             hz = value * 0.30
             if value != valueOld:
+                strobeEnginON = True
                 valueOld = value
                 conn2.send(hz)
 
-        if not (21 <= shutterData[0] <= 121) and strobeOn:
-            strobeOn = False
-            conn2.send(0)
+        if rndStrobeOn:
+            value2 = shutterData[0] - 122
+            hz = value2 * 0.30
+            if value2 != valueOld2:
+                strobeEnginON = True
+                valueOld2 = value2
+                conn2.send(hz)
 
         numberChannels = 4 * 4 * 4
         offset = 9
@@ -85,7 +99,7 @@ def manager(universe, ColourAddressData):
             if i in ColourAddressData:
                 dmxOut[i] = int(dmxPosData[i])
             else:
-                if strobeOn:
+                if strobeOn or rndStrobeOn:
                     dmxOut[i] = int(dmxStrobeData[i])
                 else:
                     dmxOut[i] = int(dmxColorData[i])
@@ -104,19 +118,29 @@ def strobe(conn, c, addr):
     numberChannels = 4 * 4 * 4
     offset = 9
     on = False
-    global dmxColorData
-    global dmxColorDataOld
-    global dmxStrobeData
+    global dmxColorData, rndStrobe, dmxColorDataOld, dmxStrobeData, strobeEnginON
     while True:
         if conn.poll():
             hz = conn.recv()
-            print(hz)
+            #print(hz)
             on = True
             if hz < 1:  # nicht durch null teilen
                 hz = 1
                 on = False
 
-        if on:
+        if strobeEnginON:
+            rndStrobe = [0] * c
+            if rndStrobeOn:
+                rnd = [False] * c
+                for x in range(c):
+                    rnd[x] = random.choice([True, False])
+                    if rnd[x]:
+                        rndStrobe[x] = 0
+                    else:
+                        rndStrobe[x] = 1
+            else:
+                rndStrobe = [1] * c
+
             for x in range(c):  # all Off
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
@@ -125,7 +149,7 @@ def strobe(conn, c, addr):
             for x in range(c):  # all ON
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    dmxStrobeData[var] = dmxColorDataOld[var]
+                    dmxStrobeData[var] = int(dmxColorDataOld[var] * rndStrobe[x])
             time.sleep((1 / hz) / 2)
 
 
@@ -135,13 +159,16 @@ if __name__ == '__main__':
     fixtureAddress = [1, 75, 149, 223]
     count = 4
     valueOld = 1
+    valueOld2 = 1
 
     dmxPosData = [0] * 512
     dmxColorData = [0] * 512
     dmxColorDataOld = [0] * 512
     dmxStrobeData = [0] * 512
 
+    strobeEnginON = False
     strobeOn = False
+    rndStrobeOn = False
 
     colourAddress = [0, 1, 2, 3, 4, 5, 6, 7, 8, 74, 75, 76, 77, 78, 79, 80,
                      81, 82, 148, 149, 150, 151, 152, 153, 154, 155, 156, 222, 223, 224, 225, 226, 227, 228, 229,
