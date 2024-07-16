@@ -1,3 +1,4 @@
+import sys
 import threading
 import time
 import random
@@ -6,7 +7,7 @@ import multiprocessing
 
 
 def start():
-    receiver = sacn.sACNreceiver(bind_address='192.168.178.131')
+    receiver = sacn.sACNreceiver(bind_address=ipaddress)
     receiver.start()
     receiver.join_multicast(inputUniverse)
     receiver.register_listener('universe', inputData, universe=inputUniverse)
@@ -84,14 +85,13 @@ def inputData(packet):
 def manager(universe, ColourAddressData):
     sender = sacn.sACNsender(source_name='sAcn Backup',
                              fps=50,  # 60  passt net ganz zu den daten von sacn view => 43,48hz
-                             bind_address='192.168.178.131')
+                             bind_address=ipaddress)
     sender.start()
     sender.activate_output(universe)
     sender[universe].multicast = True
     sender[universe].priority = 50
 
-    global dmxPosData
-    global strobeOn
+    global dmxPosData, strobeOn
     dmxOut = [0] * 512
 
     while True:
@@ -118,11 +118,11 @@ def strobe(conn, c, addr):
     numberChannels = 4 * 4 * 4
     offset = 9
     on = False
-    global dmxColorData, rndStrobe, dmxColorDataOld, dmxStrobeData, strobeEnginON
+    global dmxColorData, dmxColorDataOld, dmxStrobeData, strobeEnginON
     while True:
         if conn.poll():
             hz = conn.recv()
-            #print(hz)
+            # print(hz)
             on = True
             if hz < 1:  # nicht durch null teilen
                 hz = 1
@@ -154,6 +154,11 @@ def strobe(conn, c, addr):
 
 
 if __name__ == '__main__':
+    print('argument list', sys.argv)
+
+    ipaddress = sys.argv[1]
+    print("IP address: " + ipaddress)
+
     inputUniverse = 1
     outputUniverse = 2
     fixtureAddress = [1, 75, 149, 223]
@@ -174,7 +179,7 @@ if __name__ == '__main__':
                      81, 82, 148, 149, 150, 151, 152, 153, 154, 155, 156, 222, 223, 224, 225, 226, 227, 228, 229,
                      230]  # gleich -1 gerechnet python dmx array starting at 0
 
-    print(colourAddress)
+    #print(colourAddress)
 
     conn1, conn2 = multiprocessing.Pipe(duplex=True)
     outputManager = threading.Thread(target=manager,
