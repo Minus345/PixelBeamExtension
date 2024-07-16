@@ -57,17 +57,17 @@ def inputData(packet):
             c = (y + offset + fixtureAddress[x] - 1)
             outputData[c] = int(outputData[c] * dimmer[x])
 
-        global DmxPosData
-        global DMXOld
-        for i in range(len(DmxPosData)):
-            if i in ColourAddressData:
-                DmxPosData[i] = int(outputData[i])
+        global dmxPosData
+        global dmxColorDataOld
+        for i in range(len(dmxPosData)):
+            if i in colourAddress:
+                dmxPosData[i] = int(outputData[i])
             else:
-                DmxColorData[i] = int(outputData[i])
-                DMXOld[i] = int(outputData[i])
+                dmxColorData[i] = int(outputData[i])
+                dmxColorDataOld[i] = int(outputData[i])
 
 
-def manager(universe, fixtureAddress, ColourAddressData):
+def manager(universe, ColourAddressData):
     sender = sacn.sACNsender(source_name='sAcn Backup',
                              fps=50,  # 60  passt net ganz zu den daten von sacn view => 43,48hz
                              bind_address='192.168.178.131')
@@ -76,19 +76,19 @@ def manager(universe, fixtureAddress, ColourAddressData):
     sender[universe].multicast = True
     sender[universe].priority = 50
 
-    global DmxPosData
+    global dmxPosData
     global strobeOn
     dmxOut = [0] * 512
 
     while True:
-        for i in range(len(DmxPosData)):
+        for i in range(len(dmxPosData)):
             if i in ColourAddressData:
-                dmxOut[i] = int(DmxPosData[i])
+                dmxOut[i] = int(dmxPosData[i])
             else:
                 if strobeOn:
-                    dmxOut[i] = int(DmxStrobeData[i])
+                    dmxOut[i] = int(dmxStrobeData[i])
                 else:
-                    dmxOut[i] = int(DmxColorData[i])
+                    dmxOut[i] = int(dmxColorData[i])
         sender[universe].dmx_data = dmxOut
         '''
         print("out")
@@ -99,17 +99,16 @@ def manager(universe, fixtureAddress, ColourAddressData):
         '''
 
 
-def strobe(conn, c, addr, ColourAddressData):
+def strobe(conn, c, addr):
     hz = 1
     numberChannels = 4 * 4 * 4
     offset = 9
     on = False
-    global DmxColorData
-    global DMXOld
-    global DmxStrobeData
+    global dmxColorData
+    global dmxColorDataOld
+    global dmxStrobeData
     while True:
-        # edit Data to strobe
-        if conn.poll():  # if no strobe on -> don't go through the hole loop
+        if conn.poll():
             hz = conn.recv()
             print(hz)
             on = True
@@ -121,12 +120,12 @@ def strobe(conn, c, addr, ColourAddressData):
             for x in range(c):  # all Off
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    DmxStrobeData[var] = int(DmxColorData[var] * 0)
+                    dmxStrobeData[var] = int(dmxColorData[var] * 0)
             time.sleep((1 / hz) / 2)
             for x in range(c):  # all ON
                 for y in range(numberChannels):
                     var = (y + offset + addr[x] - 1)
-                    DmxStrobeData[var] = DMXOld[var]  # <------------- hier stehen geblieben
+                    dmxStrobeData[var] = dmxColorDataOld[var]
             time.sleep((1 / hz) / 2)
 
 
@@ -137,26 +136,26 @@ if __name__ == '__main__':
     count = 4
     valueOld = 1
 
-    DmxPosData = [0] * 512
-    DmxColorData = [0] * 512
-    DMXOld = [0] * 512
-    DmxStrobeData = [0] * 512
+    dmxPosData = [0] * 512
+    dmxColorData = [0] * 512
+    dmxColorDataOld = [0] * 512
+    dmxStrobeData = [0] * 512
 
     strobeOn = False
 
-    ColourAddressData = [0, 1, 2, 3, 4, 5, 6, 7, 8, 74, 75, 76, 77, 78, 79, 80,
-                         81, 82, 148, 149, 150, 151, 152, 153, 154, 155, 156, 222, 223, 224, 225, 226, 227, 228, 229,
-                         230]  # gleich -1 gerechnet python dmx array starting at 0
+    colourAddress = [0, 1, 2, 3, 4, 5, 6, 7, 8, 74, 75, 76, 77, 78, 79, 80,
+                     81, 82, 148, 149, 150, 151, 152, 153, 154, 155, 156, 222, 223, 224, 225, 226, 227, 228, 229,
+                     230]  # gleich -1 gerechnet python dmx array starting at 0
 
-    print(ColourAddressData)
+    print(colourAddress)
 
     conn1, conn2 = multiprocessing.Pipe(duplex=True)
-    Manager = threading.Thread(target=manager,
-                               args=(outputUniverse, fixtureAddress, ColourAddressData),
-                               name="DataOutputSender")
-    InputStrobe = threading.Thread(target=strobe,
-                                   args=(conn1, count, fixtureAddress, ColourAddressData),
+    outputManager = threading.Thread(target=manager,
+                                     args=(outputUniverse, colourAddress),
+                                     name="DataOutputSender")
+    inputStrobe = threading.Thread(target=strobe,
+                                   args=(conn1, count, fixtureAddress),
                                    name="strobe")
-    Manager.start()
-    InputStrobe.start()
+    outputManager.start()
+    inputStrobe.start()
     start()
